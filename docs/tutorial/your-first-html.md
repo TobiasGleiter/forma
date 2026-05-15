@@ -49,7 +49,7 @@ Add an HTML template that renders the form and, when output is present, displays
 ```go title="main.go" linenums="1"
 package main
 
-import "text/template"
+import "html/template"
 
 // ...
 
@@ -88,7 +88,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"text/template"
+	"html/template"
 
 	"github.com/tobiasgleiter/forma"
 	"github.com/tobiasgleiter/forma/adapters/formago"

@@ -12,13 +12,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 )
 

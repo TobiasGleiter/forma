@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
-	"text/template"
 )
 
 // Config holds the rendering dependencies for an HTML router.

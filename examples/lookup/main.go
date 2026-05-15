@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"html/template"
 	"log"
 	"net/http"
-	"text/template"
 
 	"github.com/tobiasgleiter/forma"
 	"github.com/tobiasgleiter/forma/adapters/formago"
