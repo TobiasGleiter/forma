@@ -5,6 +5,7 @@
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-unstable,
   }: let
     supportedSystems = [
       "x86_64-linux"

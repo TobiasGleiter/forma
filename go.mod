@@ -1,3 +1,3 @@
 module github.com/tobiasgleiter/forma
 
-go 1.26
+go 1.26.2
