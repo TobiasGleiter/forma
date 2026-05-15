@@ -2,7 +2,7 @@ package validation
 
 // List of user-facing form validation error messages.
 // Each format string takes the field label as the first %s argument.
-var (
+const (
 	MsgRequired     = "%s is required"
 	MsgMaxLength    = "%s must not exceed %s characters"
 	MsgMinLength    = "%s must be at least %s characters"
