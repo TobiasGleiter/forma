@@ -6,7 +6,7 @@
 
 <br />
 
-[![Forma](https://img.shields.io/badge/Powered%20By-FORMA-00ff07)](https://github.com/tobiasgleiter/forma) [![Go Report Card](https://goreportcard.com/badge/github.com/tobiasgleiter/forma)](https://goreportcard.com/report/github.com/tobiasgleiter/forma) [![License: MIT](https://img.shields.io/badge/License-MIT-00ff07.svg)](./LICENSE)
+[![Forma](https://img.shields.io/badge/Powered%20By-FORMA-00ff07)](https://github.com/tobiasgleiter/forma) [![Go Report Card](https://goreportcard.com/badge/github.com/tobiasgleiter/forma)](https://goreportcard.com/report/github.com/tobiasgleiter/forma) [![CI](https://github.com/tobiasgleiter/forma/actions/workflows/ci.yml/badge.svg)](https://github.com/tobiasgleiter/forma/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-00ff07.svg)](./LICENSE)
 
 - [What is forma?](#intro)
 
