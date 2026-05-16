@@ -1,0 +1,16 @@
+{{define "base"}}<!DOCTYPE html>
+<html>
+<head><title>Layout Example</title></head>
+<body>
+  <nav><a href="/">Home</a> | <a href="/about">About</a> | <a href="/plain">Plain</a></nav>
+  {{template "content" .}}
+</body>
+</html>{{end}}
+
+{{define "minimal"}}<!DOCTYPE html>
+<html>
+<head><title>Layout Example</title></head>
+<body>
+  {{template "content" .}}
+</body>
+</html>{{end}}
