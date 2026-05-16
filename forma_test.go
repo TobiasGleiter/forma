@@ -41,7 +41,7 @@ func TestRegister_ParseInputFailureReturns400(t *testing.T) {
 	type Output struct{}
 
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{Method: http.MethodPost, Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
+	Post(h, Operation{Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
 		func(_ context.Context, in *Input) (*Output, error) { return &Output{}, nil },
 	)
 
@@ -63,7 +63,7 @@ func TestRegister_GETRendersOutput(t *testing.T) {
 
 	tmpl := template.Must(template.New("page").Parse(`{{.Output.Message}}`))
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{Method: http.MethodGet, Path: "/", Template: tmpl},
+	Get(h, Operation{Path: "/", Template: tmpl},
 		func(_ context.Context, in *Input) (*Output, error) {
 			return &Output{Message: "hello " + in.Name}, nil
 		},
@@ -88,7 +88,7 @@ func TestRegister_POSTValidInputRendersSuccess(t *testing.T) {
 
 	tmpl := template.Must(template.New("page").Parse(`{{.Output.Message}}`))
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{Method: http.MethodPost, Path: "/", Template: tmpl},
+	Post(h, Operation{Path: "/", Template: tmpl},
 		func(_ context.Context, in *Input) (*Output, error) {
 			return &Output{Message: "saved " + in.Name}, nil
 		},
@@ -117,7 +117,7 @@ func TestRegister_POSTInvalidInputReturns422(t *testing.T) {
 	tmpl := template.Must(template.New("page").Parse(`{{range $k,$v := .Errors}}{{$k}}:{{$v}}{{end}}`))
 	h, router := newTestHTML(t)
 	handlerCalled := false
-	Register(h, Operation[Output]{Method: http.MethodPost, Path: "/", Template: tmpl},
+	Post(h, Operation{Path: "/", Template: tmpl},
 		func(_ context.Context, in *Input) (*Output, error) {
 			handlerCalled = true
 			return &Output{}, nil
@@ -150,7 +150,7 @@ func TestRegister_GETSkipsValidation(t *testing.T) {
 	tmpl := template.Must(template.New("page").Parse(`ok`))
 	h, router := newTestHTML(t)
 	handlerCalled := false
-	Register(h, Operation[Output]{Method: http.MethodGet, Path: "/", Template: tmpl},
+	Get(h, Operation{Path: "/", Template: tmpl},
 		func(_ context.Context, in *Input) (*Output, error) {
 			handlerCalled = true
 			return &Output{}, nil
@@ -173,7 +173,7 @@ func TestRegister_HandlerPageErrorRendersCorrectStatus(t *testing.T) {
 	type Output struct{}
 
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{Method: http.MethodGet, Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
+	Get(h, Operation{Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
 		func(_ context.Context, in *Input) (*Output, error) {
 			return nil, &PageError{Code: http.StatusNotFound}
 		},
@@ -192,7 +192,7 @@ func TestRegister_HandlerGenericErrorReturns500(t *testing.T) {
 	type Output struct{}
 
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{Method: http.MethodGet, Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
+	Get(h, Operation{Path: "/", Template: template.Must(template.New("page").Parse(`ok`))},
 		func(_ context.Context, in *Input) (*Output, error) {
 			return nil, errors.New("something went wrong")
 		},
@@ -211,8 +211,7 @@ func TestRegister_RedirectOnSuccess(t *testing.T) {
 	type Output struct{}
 
 	h, router := newTestHTML(t)
-	Register(h, Operation[Output]{
-		Method:      http.MethodPost,
+	Post(h, Operation{
 		Path:        "/",
 		Template:    template.Must(template.New("page").Parse(`ok`)),
 		RedirectURL: "/success",

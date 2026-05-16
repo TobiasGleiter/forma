@@ -54,8 +54,7 @@ func main() {
 	html := forma.New(formago.New(mux), forma.Config{})
 
 	// GET /greet — serve the empty form.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/greet",
 		Template: formTmpl,
 	}, func(ctx context.Context, _ *GreetInput) (*GreetOutput, error) {
@@ -63,22 +62,19 @@ func main() {
 	})
 
 	// POST /greet — validate, then redirect to the success page.
-	//
 	// Redirect derives the URL from the handler output (dynamic).
-	// Swap it for a static target with:
-	//   RedirectURL: "/greet/success",
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodPost,
-		Path:     "/greet",
-		Template: formTmpl,
+	forma.Postf(html, forma.Operationf[GreetOutput]{
+		Operation: forma.Operation{
+			Path:     "/greet",
+			Template: formTmpl,
+		},
 		Redirect: func(o *GreetOutput) string { return "/greet/" + o.Name },
 	}, func(ctx context.Context, i *GreetInput) (*GreetOutput, error) {
 		return &GreetOutput{Name: i.Name}, nil
 	})
 
 	// GET /greet/{name} — success page after redirect.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/greet/{name}",
 		Template: successTmpl,
 	}, func(ctx context.Context, i *NameInput) (*GreetOutput, error) {

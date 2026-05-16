@@ -45,8 +45,7 @@ func main() {
 	html := forma.New(formago.New(mux), forma.Config{})
 
 	// GET / — render the search form and filter results by the "q" query param.
-	forma.Register(html, forma.Operation[SearchOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/",
 		Template: searchTmpl,
 	}, func(ctx context.Context, i *SearchInput) (*SearchOutput, error) {

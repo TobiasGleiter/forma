@@ -5,19 +5,16 @@ import (
 	"net/http"
 )
 
-// Operation holds per-route configuration.
+// Operation holds per-route configuration for Get and Post handlers.
 //
 // SuccessCode and ValidationCode are per-operation rather than global because
 // different routes have different HTTP semantics: a resource-creating POST
 // should return 201, a search form is fine with 200. Zero means use the
 // framework default (200 and 422 respectively).
 //
-// RedirectURL and Redirect configure POST-redirect-GET behavior. Redirect
-// takes priority when both are set. Use RedirectURL for static targets (e.g.
-// a list page); use Redirect when the URL depends on the output (e.g. a newly
-// created resource's detail page).
-type Operation[O any] struct {
-	Method   string
+// RedirectURL configures a static POST-redirect-GET target. It is unused by
+// Get handlers.
+type Operation struct {
 	Path     string
 	Template *template.Template
 
@@ -34,20 +31,36 @@ type Operation[O any] struct {
 	// ValidationCode overrides the default 422 for validation-error re-renders.
 	ValidationCode int
 
-	// RedirectURL is a static POST-redirect-GET target. Ignored when Redirect
-	// is set.
+	// RedirectURL is a static POST-redirect-GET target. Unused by Get.
 	RedirectURL string
+}
+
+// Operationf holds per-route configuration for Postf handlers, which derive
+// the redirect URL from the handler output.
+//
+// Redirect takes priority over the embedded Operation.RedirectURL when both
+// are set. Use RedirectURL for static targets (e.g. a list page); use Redirect
+// when the URL depends on the output (e.g. a newly created resource's detail page).
+type Operationf[O any] struct {
+	Operation
 
 	// Redirect derives the redirect URL from the handler output. Takes
-	// priority over RedirectURL. No redirect occurs when it returns "".
+	// priority over Operation.RedirectURL. No redirect occurs when it returns "".
 	Redirect func(*O) string
+}
+
+func (op Operationf[O]) redirectURL(out *O) string {
+	if op.Redirect != nil {
+		return op.Redirect(out)
+	}
+	return op.Operation.RedirectURL
 }
 
 // entrypoint returns the template to execute. When TemplateName is set it
 // resolves the named sub-template via Lookup so tmpl.Name() inside the
 // renderer returns the correct name. Falls back to Template when the name
 // isn't found or TemplateName is empty.
-func (op Operation[O]) entrypoint() *template.Template {
+func (op Operation) entrypoint() *template.Template {
 	if op.TemplateName == "" {
 		return op.Template
 	}
@@ -57,23 +70,16 @@ func (op Operation[O]) entrypoint() *template.Template {
 	return op.Template
 }
 
-func (op Operation[O]) successCode() int {
+func (op Operation) successCode() int {
 	if op.SuccessCode != 0 {
 		return op.SuccessCode
 	}
 	return http.StatusOK
 }
 
-func (op Operation[O]) validationCode() int {
+func (op Operation) validationCode() int {
 	if op.ValidationCode != 0 {
 		return op.ValidationCode
 	}
 	return http.StatusUnprocessableEntity
-}
-
-func (op Operation[O]) redirectURL(out *O) string {
-	if op.Redirect != nil {
-		return op.Redirect(out)
-	}
-	return op.RedirectURL
 }

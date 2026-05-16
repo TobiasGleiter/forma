@@ -86,9 +86,9 @@ package main
 
 import (
 	"context"
+	"html/template"
 	"log"
 	"net/http"
-	"html/template"
 
 	"github.com/tobiasgleiter/forma"
 	"github.com/tobiasgleiter/forma/adapters/formago"
@@ -109,8 +109,7 @@ func main() {
 	html := forma.New(formago.New(mux), forma.Config{})
 
 	// GET /greet — serve the empty form.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/greet",
 		Template: formTmpl,
 	}, func(ctx context.Context, _ *GreetInput) (*GreetOutput, error) {
@@ -120,8 +119,7 @@ func main() {
 	// POST /greet — validate input, then greet.
 	// Forma validates GreetInput tags (required, maxLength) before calling this handler.
 	// On failure it re-renders the template with .Errors populated.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodPost,
+	forma.Post(html, forma.Operation{
 		Path:     "/greet",
 		Template: formTmpl,
 	}, func(ctx context.Context, i *GreetInput) (*GreetOutput, error) {
@@ -157,7 +155,7 @@ Congratulations! You just learned:
 
 - Creating Forma input and output models with validation tags
 - Writing an HTML template using `.Input`, `.Output`, and `.Errors`
-- Registering GET and POST operations with `forma.Register`
+- Registering GET and POST operations with `forma.Get` and `forma.Post`
 - How Forma automatically validates input and re-renders on failure
 
 Read on to learn how to level up your pages with even more features.

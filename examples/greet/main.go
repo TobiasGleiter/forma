@@ -36,9 +36,15 @@ var formTmpl = template.Must(template.New("greet").Parse(`<!DOCTYPE html>
     {{- end }}
     <button type="submit">Greet</button>
   </form>
-  {{- if .Output }}
-  <p>Hello, {{ .Output.Name }}!</p>
-  {{- end }}
+</body>
+</html>`))
+
+var successTmpl = template.Must(template.New("success").Parse(`<!DOCTYPE html>
+<html>
+<head><title>Greet</title></head>
+<body>
+  <p>Greeted successfully!</p>
+  <a href="/greet">Greet someone else</a>
 </body>
 </html>`))
 
@@ -47,23 +53,30 @@ func main() {
 	html := forma.New(formago.New(mux), forma.Config{})
 
 	// GET /greet — serve the empty form.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/greet",
 		Template: formTmpl,
 	}, func(ctx context.Context, _ *GreetInput) (*GreetOutput, error) {
 		return nil, nil
 	})
 
-	// POST /greet — validate input, then greet.
+	// POST /greet — validate input, then redirect to the success page.
 	// forma validates GreetInput tags (required, maxLength) before calling this handler.
-	// On failure it re-renders the template with .Data.Errors populated.
-	forma.Register(html, forma.Operation[GreetOutput]{
-		Method:   http.MethodPost,
-		Path:     "/greet",
-		Template: formTmpl,
+	// On failure it re-renders the template with .Errors populated.
+	forma.Post(html, forma.Operation{
+		Path:        "/greet",
+		Template:    formTmpl,
+		RedirectURL: "/greet/success",
 	}, func(ctx context.Context, i *GreetInput) (*GreetOutput, error) {
 		return &GreetOutput{Name: i.Name}, nil
+	})
+
+	// GET /greet/success — success page after redirect.
+	forma.Get(html, forma.Operation{
+		Path:     "/greet/success",
+		Template: successTmpl,
+	}, func(ctx context.Context, _ *GreetOutput) (*GreetOutput, error) {
+		return nil, nil
 	})
 
 	log.Println("example on http://localhost:8080/greet")

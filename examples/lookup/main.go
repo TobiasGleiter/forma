@@ -56,8 +56,7 @@ func main() {
 
 	// GET /users/{name} — look up a user by name.
 	// Returns 404 with a human-readable message when the user is not found.
-	forma.Register(html, forma.Operation[LookupOutput]{
-		Method:   http.MethodGet,
+	forma.Get(html, forma.Operation{
 		Path:     "/users/{name}",
 		Template: profileTmpl,
 	}, func(ctx context.Context, i *LookupInput) (*LookupOutput, error) {

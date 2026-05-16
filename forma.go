@@ -151,23 +151,63 @@ func (m *HTML) logPageError(ctx context.Context, pe *PageError) {
 	m.logger.ErrorContext(ctx, "handler error", args...)
 }
 
-// Register an operation handler for an HTML router. The handler must be a
-// function that takes a context and a pointer to the input struct, and returns
-// a pointer to the output struct and an error. The input struct fields are
-// populated from path, query, and form parameters via struct tags. The output
-// struct is passed as template data when rendering the response page.
+// Get registers a GET route. Validation is skipped for GET requests.
+// Operation.RedirectURL is unused for GET handlers.
 //
 // Example:
 //
-//	forma.Register(html, forma.Operation[GreetingOutput]{
-//		Method:   http.MethodGet,
+//	forma.Get(html, forma.Operation{
 //		Path:     "/greeting/{name}",
 //		Template: greetingTmpl,
 //	}, func(ctx context.Context, input *GreetingInput) (*GreetingOutput, error) {
 //		return &GreetingOutput{Message: "Hello, " + input.Name + "!"}, nil
 //	})
-func Register[I, O any](m *HTML, op Operation[O], fn func(context.Context, *I) (*O, error)) {
-	m.router.Handle(op.Method, op.Path, func(w http.ResponseWriter, r *http.Request) {
+func Get[I, O any](m *HTML, op Operation, fn func(context.Context, *I) (*O, error)) {
+	register(m, http.MethodGet, op, nil, fn)
+}
+
+// Post registers a POST route with an optional static redirect URL.
+// Set Operation.RedirectURL for POST-redirect-GET behavior.
+//
+// Example:
+//
+//	forma.Post(html, forma.Operation{
+//		Path:        "/greeting",
+//		Template:    greetingTmpl,
+//		RedirectURL: "/greeting/success",
+//	}, func(ctx context.Context, input *GreetingInput) (*GreetingOutput, error) {
+//		return &GreetingOutput{Message: "Hello, " + input.Name + "!"}, nil
+//	})
+func Post[I, O any](m *HTML, op Operation, fn func(context.Context, *I) (*O, error)) {
+	var redirectFn func(*O) string
+	if op.RedirectURL != "" {
+		url := op.RedirectURL
+		redirectFn = func(*O) string { return url }
+	}
+	register(m, http.MethodPost, op, redirectFn, fn)
+}
+
+// Postf registers a POST route with a dynamic redirect URL derived from the
+// handler output. Use this when the redirect target depends on the result
+// (e.g. a newly created resource's detail page).
+//
+// Example:
+//
+//	forma.Postf(html, forma.Operationf[GreetOutput]{
+//		Operation: forma.Operation{
+//			Path:     "/greet",
+//			Template: greetTmpl,
+//		},
+//		Redirect: func(o *GreetOutput) string { return "/greet/" + o.Name },
+//	}, func(ctx context.Context, input *GreetInput) (*GreetOutput, error) {
+//		return &GreetOutput{Name: input.Name}, nil
+//	})
+func Postf[I, O any](m *HTML, op Operationf[O], fn func(context.Context, *I) (*O, error)) {
+	register(m, http.MethodPost, op.Operation, op.redirectURL, fn)
+}
+
+func register[I, O any](m *HTML, method string, op Operation, redirectFn func(*O) string, fn func(context.Context, *I) (*O, error)) {
+	m.router.Handle(method, op.Path, func(w http.ResponseWriter, r *http.Request) {
 		in := new(I)
 		if err := parseInput(r, in); err != nil {
 			m.renderError(w, r, http.StatusBadRequest, nil)
@@ -202,9 +242,11 @@ func Register[I, O any](m *HTML, op Operation[O], fn func(context.Context, *I) (
 			return
 		}
 
-		if redirectTo := op.redirectURL(out); redirectTo != "" {
-			http.Redirect(w, r, redirectTo, http.StatusSeeOther)
-			return
+		if redirectFn != nil {
+			if redirectTo := redirectFn(out); redirectTo != "" {
+				http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+				return
+			}
 		}
 
 		td := &PageData[I, O]{URL: r.URL, Input: in, Output: out}
