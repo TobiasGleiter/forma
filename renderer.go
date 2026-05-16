@@ -29,6 +29,10 @@ type Config struct {
 	// a TraceID or user-facing message. By default only status and error are
 	// appended.
 	ErrorAttrs func(ctx context.Context, pe *PageError) []slog.Attr
+	// Meta, when non-nil, is called before every render and its return value
+	// is available in templates as .Meta. Use it to inject per-request data
+	// such as nonces, CSRF tokens, or session info from r.Context().
+	Meta func(r *http.Request) any
 }
 
 // DefaultConfig returns a Config with the built-in HTML renderer pre-wired.

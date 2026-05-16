@@ -79,11 +79,15 @@ func (e *PageError) Error() string {
 // because fn is skipped when validation fails (see [Register]).
 //
 // Errors maps source-tag field names to validation messages; nil on success.
+//
+// Meta holds the value returned by Config.Meta for this request, or nil if
+// Config.Meta is not set. Use it in templates as .Meta.Nonce, .Meta.CSRF, etc.
 type PageData[I, O any] struct {
 	URL    *url.URL
 	Input  *I
 	Output *O
 	Errors map[string]string
+	Meta   any
 }
 
 // HTML wraps a Router and holds shared rendering state.
@@ -93,6 +97,7 @@ type HTML struct {
 	errorPage  *template.Template
 	logger     *slog.Logger
 	errorAttrs func(ctx context.Context, pe *PageError) []slog.Attr
+	meta       func(r *http.Request) any
 }
 
 // New returns an HTML router backed by router and the renderer in cfg.
@@ -124,6 +129,7 @@ func New(router Router, cfg Config) *HTML {
 		errorPage:  errorPage,
 		logger:     logger,
 		errorAttrs: cfg.ErrorAttrs,
+		meta:       cfg.Meta,
 	}
 	return h
 }
@@ -139,6 +145,13 @@ func (m *HTML) renderError(w http.ResponseWriter, r *http.Request, code int, dat
 	if err := m.renderer.Render(w, r, code, m.errorPage, data); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+func (m *HTML) metaFor(r *http.Request) any {
+	if m.meta == nil {
+		return nil
+	}
+	return m.meta(r)
 }
 
 func (m *HTML) logPageError(ctx context.Context, pe *PageError) {
@@ -223,7 +236,7 @@ func register[I, O any](m *HTML, method string, op Operation, redirectFn func(*O
 			fieldErrs = mergeValidatorErrors(in, validateInput(in))
 		}
 		if len(fieldErrs) > 0 {
-			td := &PageData[I, O]{URL: r.URL, Input: in, Errors: fieldErrs}
+			td := &PageData[I, O]{URL: r.URL, Input: in, Errors: fieldErrs, Meta: m.metaFor(r)}
 			if err := m.renderer.Render(w, r, op.validationCode(), op.entrypoint(), td); err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
@@ -249,7 +262,7 @@ func register[I, O any](m *HTML, method string, op Operation, redirectFn func(*O
 			}
 		}
 
-		td := &PageData[I, O]{URL: r.URL, Input: in, Output: out}
+		td := &PageData[I, O]{URL: r.URL, Input: in, Output: out, Meta: m.metaFor(r)}
 		if err := m.renderer.Render(w, r, op.successCode(), op.entrypoint(), td); err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
