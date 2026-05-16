@@ -313,6 +313,30 @@ func TestValidateInput(t *testing.T) {
 			t.Fatalf("expected Internal field without source tag to be skipped, got %v", errs)
 		}
 	})
+	t.Run("int field dispatched", func(t *testing.T) {
+		type Input struct {
+			Age int `form:"age" min:"18"`
+		}
+		if validateInput(&Input{Age: 10}) == nil {
+			t.Fatal("expected error for int below min")
+		}
+	})
+	t.Run("float64 field dispatched", func(t *testing.T) {
+		type Input struct {
+			Score float64 `form:"score" max:"1.0"`
+		}
+		if validateInput(&Input{Score: 1.5}) == nil {
+			t.Fatal("expected error for float64 above max")
+		}
+	})
+	t.Run("time.Time field dispatched", func(t *testing.T) {
+		type Input struct {
+			Date time.Time `form:"date" required:""`
+		}
+		if validateInput(&Input{Date: time.Time{}}) == nil {
+			t.Fatal("expected error for zero required time.Time")
+		}
+	})
 }
 
 func TestValidateTime(t *testing.T) {
