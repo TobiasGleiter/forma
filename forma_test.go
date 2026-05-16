@@ -293,9 +293,6 @@ func TestSetField(t *testing.T) {
 func TestMergeValidatorErrors(t *testing.T) {
 	type noValidator struct{}
 
-	type withValidator struct{}
-	// withValidator implements Validator via a pointer receiver defined below.
-
 	t.Run("non-Validator returned unchanged", func(t *testing.T) {
 		in := map[string]string{"field": "err"}
 		out := mergeValidatorErrors(&noValidator{}, in)
@@ -305,9 +302,6 @@ func TestMergeValidatorErrors(t *testing.T) {
 	})
 
 	t.Run("Validator errors merged into existing map", func(t *testing.T) {
-		type V struct{}
-		// Use an inline implementation via a local type with Validate method.
-		type input struct{ called bool }
 		v := &validatorStub{errors: map[string]string{"cross": "invalid"}}
 		base := map[string]string{"field": "err"}
 		out := mergeValidatorErrors(v, base)
