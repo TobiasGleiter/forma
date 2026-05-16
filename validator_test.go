@@ -187,6 +187,134 @@ func TestValidateFloat(t *testing.T) {
 	})
 }
 
+func TestSourceKey(t *testing.T) {
+	field := func(tag string) reflect.StructField {
+		type S struct{ F string }
+		f := reflect.TypeFor[S]().Field(0)
+		f.Tag = reflect.StructTag(tag)
+		return f
+	}
+
+	t.Run("form tag returned", func(t *testing.T) {
+		if got := sourceKey(field(`form:"name"`)); got != "name" {
+			t.Fatalf("expected \"name\", got %q", got)
+		}
+	})
+	t.Run("query tag returned", func(t *testing.T) {
+		if got := sourceKey(field(`query:"q"`)); got != "q" {
+			t.Fatalf("expected \"q\", got %q", got)
+		}
+	})
+	t.Run("path tag returned", func(t *testing.T) {
+		if got := sourceKey(field(`path:"id"`)); got != "id" {
+			t.Fatalf("expected \"id\", got %q", got)
+		}
+	})
+	t.Run("form takes priority over query", func(t *testing.T) {
+		if got := sourceKey(field(`form:"a" query:"b"`)); got != "a" {
+			t.Fatalf("expected form tag \"a\" to win, got %q", got)
+		}
+	})
+	t.Run("no source tag returns empty", func(t *testing.T) {
+		if got := sourceKey(field(`json:"name"`)); got != "" {
+			t.Fatalf("expected empty string for non-source tag, got %q", got)
+		}
+	})
+}
+
+func TestValidateString(t *testing.T) {
+	run := func(tag, val string) map[string]string {
+		type S struct{ Name string }
+		f := reflect.TypeFor[S]().Field(0)
+		f.Tag = reflect.StructTag(tag)
+		errs := map[string]string{}
+		validateString(f, val, "name", "Name", errs)
+		return errs
+	}
+
+	t.Run("required empty returns error", func(t *testing.T) {
+		if len(run(`form:"name" required:""`, "")) == 0 {
+			t.Fatal("expected error for empty required string")
+		}
+	})
+	t.Run("required stops further checks", func(t *testing.T) {
+		// Empty required field: no additional errors beyond required itself.
+		errs := run(`form:"name" required:"" minLength:"5"`, "")
+		if len(errs) != 1 {
+			t.Fatalf("expected exactly 1 error, got %d: %v", len(errs), errs)
+		}
+	})
+	t.Run("empty non-required skips all checks", func(t *testing.T) {
+		if len(run(`form:"name" minLength:"5" maxLength:"2"`, "")) != 0 {
+			t.Fatal("expected all checks skipped for empty non-required string")
+		}
+	})
+	t.Run("first failing check wins", func(t *testing.T) {
+		// Value violates minLength first, then enum — only one error recorded.
+		errs := run(`form:"name" minLength:"10" enum:"a,b"`, "c")
+		if len(errs) != 1 {
+			t.Fatalf("expected exactly 1 error, got %d: %v", len(errs), errs)
+		}
+	})
+	t.Run("label tag overrides message", func(t *testing.T) {
+		errs := run(`form:"name" required:"" label:"Enter your name"`, "")
+		if errs["name"] != "Enter your name" {
+			t.Fatalf("expected label override, got %q", errs["name"])
+		}
+	})
+}
+
+func TestValidateInput(t *testing.T) {
+	t.Run("no source tags returns nil", func(t *testing.T) {
+		type Input struct {
+			Internal string
+		}
+		if validateInput(&Input{Internal: ""}) != nil {
+			t.Fatal("expected nil for struct with no source tags")
+		}
+	})
+	t.Run("all fields valid returns nil", func(t *testing.T) {
+		type Input struct {
+			Name string `form:"name" required:""`
+		}
+		if validateInput(&Input{Name: "alice"}) != nil {
+			t.Fatal("expected nil when all fields pass validation")
+		}
+	})
+	t.Run("invalid field returned in map", func(t *testing.T) {
+		type Input struct {
+			Name string `form:"name" required:""`
+		}
+		errs := validateInput(&Input{Name: ""})
+		if errs == nil || errs["name"] == "" {
+			t.Fatal("expected error for missing required field")
+		}
+	})
+	t.Run("only failing fields appear in map", func(t *testing.T) {
+		type Input struct {
+			Name  string `form:"name" required:""`
+			Email string `form:"email" required:""`
+		}
+		errs := validateInput(&Input{Name: "alice", Email: ""})
+		if len(errs) != 1 {
+			t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+		}
+		if errs["email"] == "" {
+			t.Fatal("expected error keyed by \"email\"")
+		}
+	})
+	t.Run("fields without source tags skipped", func(t *testing.T) {
+		type Input struct {
+			Name     string `form:"name" required:""`
+			Internal string `required:""`
+		}
+		errs := validateInput(&Input{Name: "alice", Internal: ""})
+		if errs != nil {
+			t.Fatalf("expected Internal field without source tag to be skipped, got %v", errs)
+		}
+	})
+}
+
 func TestValidateTime(t *testing.T) {
 	run := func(tag string, val time.Time) map[string]string {
 		type S struct{ D time.Time }
