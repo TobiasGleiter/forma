@@ -53,7 +53,7 @@ func (op Operationf[O]) redirectURL(out *O) string {
 	if op.Redirect != nil {
 		return op.Redirect(out)
 	}
-	return op.Operation.RedirectURL
+	return op.RedirectURL
 }
 
 // entrypoint returns the template to execute. When TemplateName is set it
