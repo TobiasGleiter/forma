@@ -13,8 +13,8 @@ Forma validates struct fields automatically using struct tags. Validation runs o
 | Tag | Example | Description |
 |---|---|---|
 | `required` | `required:"true"` | Fails if the value is empty |
-| `minLength` | `minLength:"2"` | Minimum character count |
-| `maxLength` | `maxLength:"20"` | Maximum character count |
+| `min` | `min:"2"` | Minimum character count |
+| `max` | `max:"20"` | Maximum character count |
 | `enum` | `enum:"foo,bar,baz"` | Value must match one of the comma-separated options |
 | `email` | `email:"true"` | Must be a valid email address |
 | `iso` | `iso:"4217"` | Must be a valid ISO 4217 currency code |
@@ -50,7 +50,7 @@ type BookingInput struct {
 
 ```go title="code.go"
 type RegisterInput struct {
-    Username string    `form:"username" required:"true" minLength:"3" maxLength:"20"`
+    Username string    `form:"username" required:"true" min:"3" max:"20"`
     Email    string    `form:"email"    required:"true" email:"true"`
     Age      int       `form:"age"      min:"18" max:"120"`
     Currency string    `form:"currency" iso:"4217"`

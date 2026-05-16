@@ -16,32 +16,32 @@ func sf(tag string) reflect.StructField {
 
 func TestMaxLengthMsg(t *testing.T) {
 	t.Run("over limit returns error", func(t *testing.T) {
-		if maxLengthMsg(sf(`maxLength:"3"`), "abcd", "F") == "" {
-			t.Fatal("expected error for value over maxLength")
+		if maxLengthMsg(sf(`max:"3"`), "abcd", "F") == "" {
+			t.Fatal("expected error for value over max")
 		}
 	})
 	t.Run("at limit returns empty", func(t *testing.T) {
-		if maxLengthMsg(sf(`maxLength:"3"`), "abc", "F") != "" {
-			t.Fatal("expected no error at maxLength limit")
+		if maxLengthMsg(sf(`max:"3"`), "abc", "F") != "" {
+			t.Fatal("expected no error at max limit")
 		}
 	})
 }
 
 func TestMinLengthMsg(t *testing.T) {
 	t.Run("under limit returns error", func(t *testing.T) {
-		if minLengthMsg(sf(`minLength:"5"`), "ab", "F") == "" {
-			t.Fatal("expected error for value under minLength")
+		if minLengthMsg(sf(`min:"5"`), "ab", "F") == "" {
+			t.Fatal("expected error for value under min")
 		}
 	})
 	t.Run("at limit returns empty", func(t *testing.T) {
-		if minLengthMsg(sf(`minLength:"5"`), "abcde", "F") != "" {
-			t.Fatal("expected no error at minLength limit")
+		if minLengthMsg(sf(`min:"5"`), "abcde", "F") != "" {
+			t.Fatal("expected no error at min limit")
 		}
 	})
 	t.Run("empty value skipped", func(t *testing.T) {
-		// Empty non-required fields must not trigger minLength.
-		if minLengthMsg(sf(`minLength:"5"`), "", "F") != "" {
-			t.Fatal("expected minLength to be skipped for empty value")
+		// Empty non-required fields must not trigger min.
+		if minLengthMsg(sf(`min:"5"`), "", "F") != "" {
+			t.Fatal("expected min to be skipped for empty value")
 		}
 	})
 }
@@ -239,19 +239,19 @@ func TestValidateString(t *testing.T) {
 	})
 	t.Run("required stops further checks", func(t *testing.T) {
 		// Empty required field: no additional errors beyond required itself.
-		errs := run(`form:"name" required:"" minLength:"5"`, "")
+		errs := run(`form:"name" required:"" min:"5"`, "")
 		if len(errs) != 1 {
 			t.Fatalf("expected exactly 1 error, got %d: %v", len(errs), errs)
 		}
 	})
 	t.Run("empty non-required skips all checks", func(t *testing.T) {
-		if len(run(`form:"name" minLength:"5" maxLength:"2"`, "")) != 0 {
+		if len(run(`form:"name" min:"5" max:"2"`, "")) != 0 {
 			t.Fatal("expected all checks skipped for empty non-required string")
 		}
 	})
 	t.Run("first failing check wins", func(t *testing.T) {
-		// Value violates minLength first, then enum — only one error recorded.
-		errs := run(`form:"name" minLength:"10" enum:"a,b"`, "c")
+		// Value violates min first, then enum — only one error recorded.
+		errs := run(`form:"name" min:"10" enum:"a,b"`, "c")
 		if len(errs) != 1 {
 			t.Fatalf("expected exactly 1 error, got %d: %v", len(errs), errs)
 		}

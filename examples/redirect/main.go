@@ -12,7 +12,7 @@ import (
 
 // GreetInput is parsed from the POST form body.
 type GreetInput struct {
-	Name string `form:"name" required:"true" maxLength:"20"`
+	Name string `form:"name" required:"true" max:"20"`
 }
 
 // NameInput is parsed from the path for the success page.

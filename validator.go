@@ -129,7 +129,7 @@ func validateString(f reflect.StructField, val, key, label string, errors map[st
 }
 
 func maxLengthMsg(f reflect.StructField, val, label string) string {
-	maxLength := f.Tag.Get("maxLength")
+	maxLength := f.Tag.Get("max")
 	if maxLength == "" {
 		return ""
 	}
@@ -140,7 +140,7 @@ func maxLengthMsg(f reflect.StructField, val, label string) string {
 }
 
 func minLengthMsg(f reflect.StructField, val, label string) string {
-	minLength := f.Tag.Get("minLength")
+	minLength := f.Tag.Get("min")
 	if minLength == "" || val == "" {
 		return ""
 	}

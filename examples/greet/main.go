@@ -13,7 +13,7 @@ import (
 // GreetInput is parsed from the POST form body.
 // Validation tags run automatically before the handler is called.
 type GreetInput struct {
-	Name string `form:"name" required:"true" maxLength:"20"`
+	Name string `form:"name" required:"true" max:"20"`
 }
 
 // GreetOutput holds the result passed to the template on success.
@@ -61,7 +61,7 @@ func main() {
 	})
 
 	// POST /greet — validate input, then redirect to the success page.
-	// forma validates GreetInput tags (required, maxLength) before calling this handler.
+	// forma validates GreetInput tags (required, max) before calling this handler.
 	// On failure it re-renders the template with .Errors populated.
 	forma.Post(html, forma.Operation{
 		Path:        "/greet",

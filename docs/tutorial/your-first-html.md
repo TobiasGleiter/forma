@@ -22,7 +22,7 @@ package main
 // GreetInput is parsed from the POST form body.
 // Validation tags run automatically before the handler is called.
 type GreetInput struct {
-	Name string `form:"name" required:"true" maxLength:"20"`
+	Name string `form:"name" required:"true" max:"20"`
 }
 
 // GreetOutput holds the result passed to the template on success.
@@ -31,7 +31,7 @@ type GreetOutput struct {
 }
 ```
 
-The `form` tag tells Forma which form field to bind. The `required` and `maxLength` tags are validated automatically before your handler is called.
+The `form` tag tells Forma which form field to bind. The `required` and `max` tags are validated automatically before your handler is called.
 
 You should now have a directory structure that looks like:
 
@@ -95,7 +95,7 @@ import (
 )
 
 type GreetInput struct {
-	Name string `form:"name" required:"true" maxLength:"20"`
+	Name string `form:"name" required:"true" max:"20"`
 }
 
 type GreetOutput struct {
@@ -117,7 +117,7 @@ func main() {
 	})
 
 	// POST /greet — validate input, then greet.
-	// Forma validates GreetInput tags (required, maxLength) before calling this handler.
+	// Forma validates GreetInput tags (required, max) before calling this handler.
 	// On failure it re-renders the template with .Errors populated.
 	forma.Post(html, forma.Operation{
 		Path:     "/greet",
