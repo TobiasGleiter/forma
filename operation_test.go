@@ -1,8 +1,11 @@
 package forma
 
 import (
+	"context"
 	"html/template"
+	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -90,6 +93,62 @@ func TestOperation_Entrypoint(t *testing.T) {
 		op := Operation[struct{}]{Template: base, TemplateName: "nonexistent"}
 		if op.entrypoint() != base {
 			t.Fatal("expected fallback to Template for unknown TemplateName")
+		}
+	})
+}
+
+// stubRouter records the last Handle call.
+type stubRouter struct{ method, path string }
+
+func (s *stubRouter) Handle(method, path string, _ http.HandlerFunc) {
+	s.method, s.path = method, path
+}
+
+func TestNew(t *testing.T) {
+	errorTmpl := template.Must(template.New("error").Parse(`err`))
+	customLogger := slog.New(slog.NewTextHandler(httptest.NewRecorder(), nil))
+	customRenderer := newHTMLRenderer(customLogger)
+
+	t.Run("nil ErrorTemplate uses built-in fallback", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{})
+		if h.errorPage.Name() != "base" {
+			t.Fatalf("expected built-in fallback template name \"base\", got %q", h.errorPage.Name())
+		}
+	})
+	t.Run("custom ErrorTemplate used", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{ErrorTemplate: errorTmpl})
+		if h.errorPage != errorTmpl {
+			t.Fatal("expected custom ErrorTemplate to be set")
+		}
+	})
+	t.Run("nil Logger uses slog.Default", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{})
+		if h.logger != slog.Default() {
+			t.Fatal("expected slog.Default() when no logger provided")
+		}
+	})
+	t.Run("custom Logger used", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{Logger: customLogger})
+		if h.logger != customLogger {
+			t.Fatal("expected custom logger to be set")
+		}
+	})
+	t.Run("nil Renderer uses built-in htmlRenderer", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{})
+		if _, ok := h.renderer.(*htmlRenderer); !ok {
+			t.Fatal("expected built-in htmlRenderer when no renderer provided")
+		}
+	})
+	t.Run("custom Renderer used", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{Renderer: customRenderer})
+		if h.renderer != customRenderer {
+			t.Fatal("expected custom renderer to be set")
+		}
+	})
+	t.Run("ErrorAttrs wired", func(t *testing.T) {
+		h := New(&stubRouter{}, Config{ErrorAttrs: func(ctx context.Context, pe *PageError) []slog.Attr { return nil }})
+		if h.errorAttrs == nil {
+			t.Fatal("expected ErrorAttrs to be set")
 		}
 	})
 }
