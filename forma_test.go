@@ -55,6 +55,46 @@ func TestRegister_ParseInputFailureReturns400(t *testing.T) {
 	}
 }
 
+func TestRegister_IncompleteTemplatePanics(t *testing.T) {
+	// Simulates the common layout pattern: template.New("root").ParseGlob(...)
+	// where all files only contain {{define}} blocks. The root template is never
+	// parsed itself, so its Tree is nil.
+	tmpl := template.New("root")
+	template.Must(tmpl.New("base").Parse(`<html>{{.}}</html>`))
+
+	type Input struct{}
+	type Output struct{}
+	h, _ := newTestHTML(t)
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic, got none")
+		}
+		msg, _ := r.(string)
+		if !strings.Contains(msg, "incomplete") {
+			t.Fatalf("unexpected panic message: %s", msg)
+		}
+	}()
+
+	Get(h, Operation{Path: "/", Template: tmpl},
+		func(_ context.Context, in *Input) (*Output, error) { return nil, nil },
+	)
+}
+
+func TestRegister_IncompleteTemplateWithNameDoesNotPanic(t *testing.T) {
+	tmpl := template.New("root")
+	template.Must(tmpl.New("base").Parse(`<html>{{.}}</html>`))
+
+	type Input struct{}
+	type Output struct{}
+	h, _ := newTestHTML(t)
+
+	Get(h, Operation{Path: "/", Template: tmpl, TemplateName: "base"},
+		func(_ context.Context, in *Input) (*Output, error) { return nil, nil },
+	)
+}
+
 func TestRegister_GETRendersOutput(t *testing.T) {
 	type Input struct {
 		Name string `query:"name"`

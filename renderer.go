@@ -33,6 +33,10 @@ type Config struct {
 	// is available in templates as .Meta. Use it to inject per-request data
 	// such as nonces, CSRF tokens, or session info from r.Context().
 	Meta func(r *http.Request) any
+	// TemplateName is the default entry-point template name for all routes.
+	// Overrides the zero value of Operation.TemplateName across the whole router.
+	// Individual routes can still set their own Operation.TemplateName to override.
+	TemplateName string
 }
 
 // DefaultConfig returns a Config with the built-in HTML renderer pre-wired.

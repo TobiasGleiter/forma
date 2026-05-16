@@ -92,12 +92,13 @@ type PageData[I, O any] struct {
 
 // HTML wraps a Router and holds shared rendering state.
 type HTML struct {
-	router     Router
-	renderer   Renderer
-	errorPage  *template.Template
-	logger     *slog.Logger
-	errorAttrs func(ctx context.Context, pe *PageError) []slog.Attr
-	meta       func(r *http.Request) any
+	router       Router
+	renderer     Renderer
+	errorPage    *template.Template
+	logger       *slog.Logger
+	errorAttrs   func(ctx context.Context, pe *PageError) []slog.Attr
+	meta         func(r *http.Request) any
+	templateName string
 }
 
 // New returns an HTML router backed by router and the renderer in cfg.
@@ -124,12 +125,13 @@ func New(router Router, cfg Config) *HTML {
 		renderer = cfg.Renderer
 	}
 	h := &HTML{
-		router:     router,
-		renderer:   renderer,
-		errorPage:  errorPage,
-		logger:     logger,
-		errorAttrs: cfg.ErrorAttrs,
-		meta:       cfg.Meta,
+		router:       router,
+		renderer:     renderer,
+		errorPage:    errorPage,
+		logger:       logger,
+		errorAttrs:   cfg.ErrorAttrs,
+		meta:         cfg.Meta,
+		templateName: cfg.TemplateName,
 	}
 	return h
 }
@@ -220,6 +222,17 @@ func Postf[I, O any](m *HTML, op Operationf[O], fn func(context.Context, *I) (*O
 }
 
 func register[I, O any](m *HTML, method string, op Operation, redirectFn func(*O) string, fn func(context.Context, *I) (*O, error)) {
+	if op.TemplateName == "" {
+		op.TemplateName = m.templateName
+	}
+	tmpl := op.entrypoint()
+	if tmpl.Tree == nil {
+		panic(fmt.Sprintf(
+			"forma: route %s %s: template %q is incomplete. Set Config.TemplateName or Operation.TemplateName to the defined entry-point block (e.g. \"base\")",
+			method, op.Path, tmpl.Name(),
+		))
+	}
+
 	m.router.Handle(method, op.Path, func(w http.ResponseWriter, r *http.Request) {
 		in := new(I)
 		if err := parseInput(r, in); err != nil {
