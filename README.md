@@ -1,6 +1,6 @@
 <a href="#">
 	<picture>
-		<img alt="Forma Logo" src="images/forma.png" />
+		<img alt="Forma Logo" src="docs/forma.png" />
 	</picture>
 </a>
 
