@@ -68,6 +68,16 @@ func (e *PageError) Error() string {
 	return http.StatusText(e.Code)
 }
 
+// ValidationError signals that one or more fields failed server-side validation.
+// Returning a ValidationError from a handler re-renders the form template with
+// Errors populated, exactly as tag validation would. Use it for constraints that
+// can only be checked against external state (e.g. uniqueness, referential integrity).
+type ValidationError struct {
+	Field map[string]string
+}
+
+func (e *ValidationError) Error() string { return "validation error" }
+
 // PageData is the envelope passed to all form templates.
 //
 // URL is the request URL, available for building links or reading query params.
@@ -258,6 +268,14 @@ func register[I, O any](m *HTML, method string, op Operation, redirectFn func(*O
 
 		out, err := fn(r.Context(), in)
 		if err != nil {
+			if ve, ok := errors.AsType[*ValidationError](err); ok {
+				td := &PageData[I, O]{URL: r.URL, Input: in, Errors: ve.Field, Meta: m.metaFor(r)}
+				if err := m.renderer.Render(w, r, op.validationCode(), op.entrypoint(), td); err != nil {
+					m.logger.ErrorContext(r.Context(), "handler error", slog.Int("status", http.StatusInternalServerError), slog.String("error", err.Error()))
+					m.renderError(w, r, http.StatusInternalServerError, nil)
+				}
+				return
+			}
 			if pe, ok := errors.AsType[*PageError](err); ok {
 				m.logPageError(r.Context(), pe)
 				m.renderError(w, r, pe.Code, pe.Data)
